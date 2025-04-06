@@ -49,6 +49,7 @@ Assets/.FMOD/Build/*/*.bank filter=lfs diff=lfs merge=lfs -text
 # Code
 *.dll filter=lfs diff=lfs merge=lfs -text
 Assets/_Project/Fonts/*.asset filter=lfs diff=lfs merge=lfs -text
+Assets/_Project/Font/*.asset filter=lfs diff=lfs merge=lfs -text
 *.unity filter=lfs diff=lfs merge=lfs -text
 *.so filter=lfs diff=lfs merge=lfs -text
 *.bc filter=lfs diff=lfs merge=lfs -text
