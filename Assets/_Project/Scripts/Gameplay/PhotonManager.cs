@@ -36,6 +36,7 @@ public class PhotonManager : MonoBehaviour
     private NativeList<int> _finishedPhotons;
     private Vector3[] _positionsBuffer;
     private int _randIndex;
+    private Vector3 _targetCache;
 
     void Start()
     {
@@ -74,10 +75,12 @@ public class PhotonManager : MonoBehaviour
             OutputMatrices = _results,
             PhotonQueue = _photonAddQueue,
             FinishedPhotons = _finishedPhotons,
+            RecalculateDirection = _targetCache != CenterTarget.position,
             Scale = Scale,
             PhotonCount = MaxPhotonCount,
-            CenterPosZ = CenterTarget.position.z,
-            DeltaTime = deltaTime
+            Target = CenterTarget.position,
+            DeltaTime = deltaTime,
+            Speed = Speed
         };
 
         job.Run();
@@ -85,6 +88,8 @@ public class PhotonManager : MonoBehaviour
         CurrentPhotonCount = _results.Length;
         if(_finishedPhotons.Length > 0)
             PhotonsFinished?.Invoke(_finishedPhotons.Length);
+        
+        _targetCache = CenterTarget.position;
     }
 
     private void Update()
@@ -127,11 +132,13 @@ public struct MatrixFilterJob : IJob
     public NativeList<Matrix4x4> OutputMatrices;
     public NativeQueue<(Vector3, Vector3)> PhotonQueue;
     public NativeList<int> FinishedPhotons;
+    public bool RecalculateDirection;
     
     [ReadOnly] public float Scale;
     [ReadOnly] public int PhotonCount;
-    [ReadOnly] public float CenterPosZ;
+    [ReadOnly] public Vector3 Target;
     [ReadOnly] public float DeltaTime;
+    [ReadOnly] public float Speed;
 
     public void Execute()
     {
@@ -149,14 +156,16 @@ public struct MatrixFilterJob : IJob
                 }
                 else continue;
             }
+
+            if(RecalculateDirection)
+                Directions[i] = (Target - Positions[i]).normalized * Speed;
             
             Positions[i] += Directions[i] * DeltaTime;
-
-
+            
             InputMatrices[i] = Matrix4x4.TRS(Positions[i], Quaternion.identity, Vector3.one * Scale);
             
             // Reset or destroy logic
-            if (Positions[i].z > CenterPosZ)
+            if (Positions[i].z > Target.z)
             {
                 Flags[i] = 0;
                 FinishedPhotons.Add(i);
