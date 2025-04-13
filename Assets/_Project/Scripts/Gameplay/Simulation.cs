@@ -1,5 +1,6 @@
 
 using System;
+using UnityEngine;
 
 [System.Serializable]
 public class Simulation : ITickable
@@ -8,12 +9,21 @@ public class Simulation : ITickable
     public int Index;
     public SimulationState CurrentState;
     public Resource OutputResource;
-    
-    
+
+    public float SimulationCompletion = 0;
     private PhotonManager _photonManager;
     private PhotonGenerator _photonGenerator;
+    private float _completionDegradationPerTick;
+    private Action _onSimulationComplete;
 
-    public Simulation(string name, int index, PhotonManager photonManager, PhotonGenerator photonGenerator, Resource resource)
+    public Simulation(
+        string name, 
+        int index, 
+        PhotonManager photonManager, 
+        PhotonGenerator photonGenerator, 
+        Resource resource, 
+        float completionDegradationPerTick,
+        Action onComplete)
     {
         Name = name;
         Index = index;
@@ -27,6 +37,9 @@ public class Simulation : ITickable
         _photonGenerator.Init();
         
         OutputResource = resource;
+        
+        _completionDegradationPerTick = completionDegradationPerTick;
+        _onSimulationComplete = onComplete;
         
         IdleEngine.Root.RegisterTickable(this);
     }
@@ -42,7 +55,12 @@ public class Simulation : ITickable
 
     private void PhotonFinished(int count)
     {
+        var outputValue = count * CurrentState.Efficiency;
         OutputResource.Add(count * CurrentState.Efficiency);
+        SimulationCompletion += outputValue - _completionDegradationPerTick;
+        SimulationCompletion = Mathf.Clamp(SimulationCompletion, 0, 100);
+        if(SimulationCompletion >= 100)
+            _onSimulationComplete?.Invoke();
     }
 }
 

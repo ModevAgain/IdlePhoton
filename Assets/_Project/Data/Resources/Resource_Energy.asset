@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Resource_Energy
   m_EditorClassIdentifier: 
   ResourceName: Energy
-  BaseValue: 50
-  Exponent: 0
+  BaseValue: 168858.52
+  Exponent: 5

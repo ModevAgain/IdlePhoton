@@ -16,11 +16,18 @@ public class Resource : ScriptableObject
     public void Add(float value)
     {
         BaseValue += value;
+        SetExponent();
     }
     
     public void Remove(float value)
     {
         BaseValue -= value;
+        SetExponent();
+    }
+
+    private void SetExponent()
+    {
+        Exponent = (int)Math.Floor(Math.Log10(BaseValue));
     }
     
     public void Reset()
@@ -34,8 +41,8 @@ public static class StringExtensions
 {
     public static string ToHumanReadableString(this Resource resource)
     {
-        if (resource.Exponent > 1)
-            return resource.BaseValue + "e" + resource.Exponent;
-        return resource.BaseValue.ToString();
+        if (resource.BaseValue > 999999)
+            return $"{resource.BaseValue/Mathf.Pow(10, resource.Exponent):0.00}e{resource.Exponent}";
+        return Mathf.FloorToInt(resource.BaseValue).ToString();
     }
 }

@@ -19,23 +19,32 @@ public class GeneratorUpgradeUI : TickObject
     public Image BuyableOverlay;
     
     private BaseGeneratorUpgrade _upgrade;
+    private bool _active;
 
     protected override void Start()
     {
         _upgrade = Generator.Upgrades.First(u => u.UpgradeType == UpgradeType)!;
 
-        TMPUpgradeLabel.text = $"{_upgrade.Name} ( {_upgrade.UpgradeCount} )";
+        TMPUpgradeLabel.text = "/";
         
-        var (amount, cost) = GetCostInfo();
-        TMPUpgradeValues.text = $"{cost:0.0}\n+{amount}";
+        TMPUpgradeValues.text = "/";
         
         BtnUpgrade.onClick.AddListener(OnClickUpgrade);
         
         base.Start();
     }
 
+    public void Init()
+    {
+        TMPUpgradeLabel.text = $"{_upgrade.Name} ( {_upgrade.UpgradeCount} )";
+        _active = true;
+    }
+
     public override void Tick(uint index, float tickBalanceValue, float deltaTime)
     {
+        if (!_active)
+            return;
+        
         var (amount, cost) = GetCostInfo();
         BtnUpgrade.interactable = _upgrade.CostResource.Value > cost;
         BuyableOverlay.fillAmount = 1 - Mathf.Clamp01((float)_upgrade.CostResource.Value / cost);

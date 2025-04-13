@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class TargetControl : MonoBehaviour
+public class PositionalControl : MonoBehaviour
 {
     public float Steps;
     public Bounds TargetBounds;
@@ -22,6 +22,11 @@ public class TargetControl : MonoBehaviour
         TargetBounds.center = TargetTransform.position;
     }
 
+    public void OnClick_CenterTarget()
+    {
+        OnTargetMove(Vector2.zero);
+    }
+    
     private void OnTargetMove(Vector2 direction)
     {
         var newPos = TargetTransform.position + (Vector3)direction * Steps;
