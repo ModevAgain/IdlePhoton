@@ -16,7 +16,6 @@ public class PhotonGenerator : BaseGenerator
 
     protected override void Generate(int amount)
     {
-        for (int i = 0; i < amount; i++)
-            PhotonManager.AddPhoton();
+        PhotonManager.AddPhoton(amount);
     }
 }

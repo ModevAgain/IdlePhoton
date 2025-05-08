@@ -2,10 +2,7 @@ using System;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
-
-
 using UnityEngine;
-using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 public class PhotonManager : MonoBehaviour
@@ -27,27 +24,42 @@ public class PhotonManager : MonoBehaviour
     public bool Render;
     
     private NativeArray<Matrix4x4> _matrices;
-    private NativeList<Matrix4x4> _results;
+    private NativeArray<Matrix4x4> _results;
+    private Matrix4x4[] _renderResults;
     
     private NativeArray<int> _photonFlags;
     private NativeArray<Vector3> _positions;
     private NativeArray<Vector3> _direction;
-    private NativeQueue<(Vector3, Vector3)> _photonAddQueue;
-    private NativeList<int> _finishedPhotons;
+    private NativeArray<(Vector3, Vector3)> _photonAddQueue;
+    private NativeArray<int> _activeCount;
+    private NativeArray<int> _finishedCount;
     private Vector3[] _positionsBuffer;
     private int _randIndex;
     private Vector3 _targetCache;
+    private RenderParams _renderParams;
 
+    private bool _receivedFirstPhoton;
+    private int _photonAddPointer;
+    
     void Start()
     {
         _matrices = new NativeArray<Matrix4x4>(MaxPhotonCount, Allocator.Persistent);
         _positions = new NativeArray<Vector3>(MaxPhotonCount, Allocator.Persistent);
         _direction = new NativeArray<Vector3>(MaxPhotonCount, Allocator.Persistent);
         _photonFlags = new NativeArray<int>(MaxPhotonCount, Allocator.Persistent);
-        _results = new NativeList<Matrix4x4>(Allocator.Persistent);
-        _photonAddQueue = new NativeQueue<(Vector3, Vector3)>(Allocator.Persistent);
-        _finishedPhotons = new NativeList<int>(Allocator.Persistent);
+        _results = new NativeArray<Matrix4x4>(MaxPhotonCount, Allocator.Persistent);
+        _renderResults = new Matrix4x4[MaxPhotonCount];
+        _photonAddQueue = new NativeArray<(Vector3, Vector3)>(MaxPhotonCount/100, Allocator.Persistent);
+        _activeCount = new NativeArray<int>(1, Allocator.Persistent);
+        _finishedCount = new NativeArray<int>(1, Allocator.Persistent);
         
+        _renderParams = new RenderParams(photonMaterial)
+        {
+            receiveShadows = false,
+            shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
+            layer = LayerMask.NameToLayer("Simulation")
+        };
+
         FillInPosition();
 
         for (int i = 0; i < MaxPhotonCount; i++)
@@ -58,14 +70,21 @@ public class PhotonManager : MonoBehaviour
         }
     }
 
-    public void AddPhoton()
+    public void AddPhoton(int amount)
     {
-        var pos = DequeueRandomPosition();
-        _photonAddQueue.Enqueue((pos, (CenterTarget.position - pos).normalized * Speed));
+        for (int i = 0; i < amount; i++)
+        {
+            _photonAddQueue[_photonAddPointer] = (DequeueRandomPosition(true), (CenterTarget.position - DequeueRandomPosition()).normalized * Speed);
+            _photonAddPointer++;
+        }
+        _receivedFirstPhoton = true;
     }
     
     public void Tick(float deltaTime)
     {
+        if (!_receivedFirstPhoton)
+            return;
+        
         var job = new MatrixFilterJob
         {
             Positions = _positions,
@@ -74,10 +93,12 @@ public class PhotonManager : MonoBehaviour
             InputMatrices = _matrices,
             OutputMatrices = _results,
             PhotonQueue = _photonAddQueue,
-            FinishedPhotons = _finishedPhotons,
+            ActivePhotonCount = _activeCount,
+            FinishedPhotonCount = _finishedCount,
             RecalculateDirection = _targetCache != CenterTarget.position,
             Scale = Scale,
-            PhotonCount = MaxPhotonCount,
+            MaxPhotonCount = MaxPhotonCount,
+            PhotonAddCount = _photonAddPointer + 1,
             Target = CenterTarget.position,
             DeltaTime = deltaTime,
             Speed = Speed
@@ -85,17 +106,18 @@ public class PhotonManager : MonoBehaviour
 
         job.Run();
         
-        CurrentPhotonCount = _results.Length;
-        if(_finishedPhotons.Length > 0)
-            PhotonsFinished?.Invoke(_finishedPhotons.Length);
+        CurrentPhotonCount = _activeCount[0];
+        if(_finishedCount[0] > 0)
+            PhotonsFinished?.Invoke(_finishedCount[0]);
         
         _targetCache = CenterTarget.position;
+        _photonAddPointer = 0;
     }
 
     private void Update()
     {
-        if(Render)
-            Graphics.DrawMeshInstanced(photonMesh, 0, photonMaterial, _results.AsArray().ToArray(), CurrentPhotonCount, null, UnityEngine.Rendering.ShadowCastingMode.Off, false);
+        if(Render && CurrentPhotonCount > 0)
+            Graphics.RenderMeshInstanced(_renderParams, photonMesh, 0, _results, CurrentPhotonCount);
     }
 
     private Vector3 GetRandomPointFromCenterWithRange()
@@ -114,11 +136,11 @@ public class PhotonManager : MonoBehaviour
         }
     }
 
-    private Vector3 DequeueRandomPosition()
+    private Vector3 DequeueRandomPosition(bool lookUpOnly = false)
     {
         if(_randIndex + 1 >= _positionsBuffer.Length)
             _randIndex = 0;
-        return _positionsBuffer[_randIndex++];
+        return _positionsBuffer[lookUpOnly ? _randIndex : _randIndex++];
     }
 }
 
@@ -129,30 +151,34 @@ public struct MatrixFilterJob : IJob
     public NativeArray<Vector3> Directions;
     public NativeArray<int> Flags;
     public NativeArray<Matrix4x4> InputMatrices;
-    public NativeList<Matrix4x4> OutputMatrices;
-    public NativeQueue<(Vector3, Vector3)> PhotonQueue;
-    public NativeList<int> FinishedPhotons;
+    public NativeArray<Matrix4x4> OutputMatrices;
+    public NativeArray<(Vector3, Vector3)> PhotonQueue;
+    public NativeArray<int> ActivePhotonCount;
+    public NativeArray<int> FinishedPhotonCount;
     public bool RecalculateDirection;
     
     [ReadOnly] public float Scale;
-    [ReadOnly] public int PhotonCount;
+    [ReadOnly] public int MaxPhotonCount;
+    [ReadOnly] public int PhotonAddCount;
     [ReadOnly] public Vector3 Target;
     [ReadOnly] public float DeltaTime;
     [ReadOnly] public float Speed;
 
     public void Execute()
     {
-        OutputMatrices.Clear();
-        FinishedPhotons.Clear();
+        int photonQueueIndex = 0;
+            
+        ActivePhotonCount[0] = 0;
+        FinishedPhotonCount[0] = 0;
         
-        for (int i = 0; i < PhotonCount; i++)
+        for (int i = 0; i < MaxPhotonCount; i++)
         {
             if (Flags[i] == 0)
             {
-                if (!PhotonQueue.IsEmpty())
+                if (PhotonAddCount > photonQueueIndex)
                 {
                     Flags[i] = 1;
-                    (Positions[i], Directions[i]) = PhotonQueue.Dequeue();
+                    (Positions[i], Directions[i]) = PhotonQueue[photonQueueIndex++];
                 }
                 else continue;
             }
@@ -168,14 +194,17 @@ public struct MatrixFilterJob : IJob
             if (Positions[i].z > Target.z)
             {
                 Flags[i] = 0;
-                FinishedPhotons.Add(i);
+                FinishedPhotonCount[0]++;
             }
         }
         
         for (int i = 0; i < Flags.Length; i++)
         {
             if (Flags[i] == 1)
-                OutputMatrices.Add(InputMatrices[i]);
+            {
+                OutputMatrices[ActivePhotonCount[0]] = InputMatrices[i];
+                ActivePhotonCount[0]++;
+            }
         }
     }
 }

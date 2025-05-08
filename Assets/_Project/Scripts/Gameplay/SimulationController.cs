@@ -46,6 +46,6 @@ public class SimulationController : TickObject
 
     public void OnSimulationComplete()
     {
-        Debug.Log("Sim completed!");
+        //Debug.Log("Sim completed!");
     }
 }

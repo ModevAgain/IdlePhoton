@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PositionalControl : MonoBehaviour
+public class PositionalControl : BaseGameplayModule
 {
     public float Steps;
     public Bounds TargetBounds;
@@ -11,6 +11,8 @@ public class PositionalControl : MonoBehaviour
     public Transform TargetTransform;
     public Transform SimCamTransform;
     public TMP_Text TargetText;
+    
+    public Action<Vector2> OnPositionChanged;
 
     private void Start()
     {
@@ -35,6 +37,13 @@ public class PositionalControl : MonoBehaviour
             TargetTransform.position = newPos;
             TargetTransform.LookAt(SimCamTransform);
             TargetText.text = $"Target<br>Position<br>({TargetTransform.position.x:0}, {TargetTransform.position.y:0})";
+            
+            OnPositionChanged?.Invoke(newPos);
         }
+    }
+
+    public override void OnModuleEnable()
+    {
+        base.OnModuleEnable();
     }
 }
