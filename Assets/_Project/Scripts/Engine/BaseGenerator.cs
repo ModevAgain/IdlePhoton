@@ -37,7 +37,7 @@ public abstract class BaseGenerator : TickObject
     {
         if (!_initialized)
             return;
-
+        
         _generationValue += GenerationRatePerTick;
         if (_generationValue >= 1)
         {

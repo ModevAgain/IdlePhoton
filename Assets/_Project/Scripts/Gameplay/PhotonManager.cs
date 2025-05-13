@@ -98,7 +98,7 @@ public class PhotonManager : MonoBehaviour
             RecalculateDirection = _targetCache != CenterTarget.position,
             Scale = Scale,
             MaxPhotonCount = MaxPhotonCount,
-            PhotonAddCount = _photonAddPointer + 1,
+            PhotonAddCount = _photonAddPointer,
             Target = CenterTarget.position,
             DeltaTime = deltaTime,
             Speed = Speed
@@ -149,7 +149,7 @@ public struct MatrixFilterJob : IJob
 {
     public NativeArray<Vector3> Positions;
     public NativeArray<Vector3> Directions;
-    public NativeArray<int> Flags;
+    public NativeArray<int> Flags; // 0 = Free, 1 = ActivePhoton
     public NativeArray<Matrix4x4> InputMatrices;
     public NativeArray<Matrix4x4> OutputMatrices;
     public NativeArray<(Vector3, Vector3)> PhotonQueue;

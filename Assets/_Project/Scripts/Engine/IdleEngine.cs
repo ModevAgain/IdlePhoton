@@ -10,7 +10,11 @@ public class IdleEngine : MonoBehaviour
     public float TickTime = 0.05f;
     public float TickBalanceValue = 1;
     public uint TickIndex;
+
+    public bool Debug_LogTickableRegistration;
+    
     private List<ITickable> _tickables;
+    private List<ITickable> _removeTickablesOnFinishTick;
     private bool _active;
     
     private Coroutine _tickRoutine;
@@ -23,6 +27,7 @@ public class IdleEngine : MonoBehaviour
         }
         
         _tickables = new List<ITickable>();
+        _removeTickablesOnFinishTick = new List<ITickable>();
     }
 
     void Start()
@@ -38,25 +43,31 @@ public class IdleEngine : MonoBehaviour
 
     private IEnumerator TickRoutine()
     {
+        var waiter = new WaitForSeconds(TickTime);
         while (_active)
         {
             TickIndex++;
-            
-            foreach (var tickable in _tickables)
+
+            for (int i = 0; i < _tickables.Count; i++)
             {
-                tickable.Tick(TickIndex, TickBalanceValue, TickTime);
+                _tickables[i]?.Tick(TickIndex, TickBalanceValue, TickTime);
             }
-            yield return new WaitForSeconds(TickTime);
+            yield return waiter;
         }
     }
 
     public void RegisterTickable(ITickable tickable)
     {
+        if (Debug_LogTickableRegistration)
+            Debug.Log("Registered Tickable " + tickable.GetType());
+        
+        
         _tickables.Add(tickable);
     }
 
     public void RemoveTickable(ITickable tickable)
     {
-        _tickables.Remove(tickable);
+        var i = _tickables.IndexOf(tickable);
+        _tickables[i] = null;
     }
 }
