@@ -23,7 +23,7 @@ public class SimulationController : TickObject
     
     public void StartSimulation(string simName, PhotonManager photonManager, PhotonGenerator photonGenerator, Resource resource)
     {
-        var sim = new Simulation(
+        CurrentSimulation = new Simulation(
             simName, 
             SimulationIndex, 
             photonManager, 
@@ -31,7 +31,8 @@ public class SimulationController : TickObject
             resource, 
             DegradationValues[SimulationIndex],
             OnSimulationComplete);
-        CurrentSimulation = sim;
+        
+        SimLogger.Log($"Start Simulation -{simName}-{SimulationIndex}");
         
         SimulationDisplay.Init(CurrentSimulation);
 
