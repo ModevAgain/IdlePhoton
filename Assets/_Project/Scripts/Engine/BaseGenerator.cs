@@ -13,6 +13,7 @@ public abstract class BaseGenerator : TickObject
     
     private float _generationValue;
     private bool _initialized;
+    private bool _active;
 
     public virtual void Init()
     {
@@ -26,6 +27,7 @@ public abstract class BaseGenerator : TickObject
         });
         
         _initialized = true;
+        _active = true;
     }
 
     protected override void Start()
@@ -35,7 +37,7 @@ public abstract class BaseGenerator : TickObject
 
     public override void Tick(uint index, float tickBalanceValue, float deltaTime)
     {
-        if (!_initialized)
+        if (!_initialized || !_active)
             return;
         
         _generationValue += GenerationRatePerTick;
@@ -45,6 +47,11 @@ public abstract class BaseGenerator : TickObject
             Generate(generationCount);
             _generationValue -= generationCount;
         }
+    }
+
+    public void Stop()
+    {
+        _active = false;
     }
 
     protected abstract void Generate(int amount);
@@ -71,6 +78,7 @@ public class BaseGeneratorUpgrade
     
     public void Init(Action<float> callback)
     {
+        UpgradeCount = 0;
         _callback = callback;
         CurrentValue = Mathf.Lerp(ValueRange.x, ValueRange.y, (float)UpgradeCount / MaxCount);
         _callback?.Invoke(CurrentValue);

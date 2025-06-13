@@ -14,7 +14,7 @@ public class Simulation : ITickable
     private PhotonManager _photonManager;
     private PhotonGenerator _photonGenerator;
     private float _completionDegradationPerTick;
-    private Action _onSimulationComplete;
+    private Action _onSimulationFinished;
 
     public Simulation(
         string name, 
@@ -23,7 +23,7 @@ public class Simulation : ITickable
         PhotonGenerator photonGenerator, 
         Resource resource, 
         float completionDegradationPerTick,
-        Action onComplete)
+        Action onFinished)
     {
         Name = name;
         Index = index;
@@ -36,10 +36,11 @@ public class Simulation : ITickable
         _photonGenerator = photonGenerator;
         _photonGenerator.Init();
         
+        resource.Reset();
         OutputResource = resource;
         
         _completionDegradationPerTick = completionDegradationPerTick;
-        _onSimulationComplete = onComplete;
+        _onSimulationFinished = onFinished;
         
         IdleEngine.Root.RegisterTickable(this);
     }
@@ -60,7 +61,14 @@ public class Simulation : ITickable
         SimulationCompletion += outputValue - _completionDegradationPerTick;
         SimulationCompletion = Mathf.Clamp(SimulationCompletion, 0, 100);
         if(SimulationCompletion >= 100)
-            _onSimulationComplete?.Invoke();
+            _onSimulationFinished?.Invoke();
+    }
+
+    public void Stop()
+    {
+        _photonManager.PhotonsFinished -= PhotonFinished;
+        _photonGenerator.Stop();
+        _onSimulationFinished = null;
     }
 }
 

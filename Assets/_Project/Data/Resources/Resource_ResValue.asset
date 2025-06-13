@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9fa9b3d1f5a323c4e851a720083f4fa8, type: 3}
-  m_Name: Resource_Energy
+  m_Name: Resource_ResValue
   m_EditorClassIdentifier: 
-  ResourceName: Energy
+  ResourceName: ResValue
   BaseValue: 0
   Exponent: 5

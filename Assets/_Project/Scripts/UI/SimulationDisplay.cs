@@ -15,6 +15,11 @@ public class SimulationDisplay : MonoBehaviour
     public TMP_Text TMP_PhotonRate;
     public TMP_Text TMP_PhotonEfficiency;
 
+    public GameObject ObjRunSimBtn;
+    public GameObject ObjCompleteSimBtn;
+    public Button BtnCompleteSim;
+    public TMP_Text TMP_CompleteSimValue;
+    
     public Image CompletionFill;
     public TMP_Text TMP_Completion;
     
@@ -27,15 +32,10 @@ public class SimulationDisplay : MonoBehaviour
     {
         CultureInfo.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
 
-        TMP_SimName.text = "Simulation - [EMTPY]";
-        
-        TMP_SimValue.text = "/";
-        
-        TMP_Completion.text = "/";
-        CompletionFill.fillAmount = 0;
+       ClearSimulation();
     }
 
-    public void Init(Simulation sim)
+    public void InitSimulation(Simulation sim)
     {
         TMP_SimName.text = $"Simulation - {sim.Name}";
         
@@ -44,6 +44,25 @@ public class SimulationDisplay : MonoBehaviour
         foreach (var gen in GeneratorUpgradeDisplays)
         {
             gen.Init();
+        }
+    }
+
+    private void ClearSimulation()
+    {
+        TMP_SimName.text = "Simulation - [EMTPY]";
+        
+        TMP_SimValue.text = "/";
+        TMP_Completion.text = "/";
+
+        TMP_PhotonCount.text = "/";
+        TMP_PhotonRate.text = "/";
+        TMP_PhotonEfficiency.text = "/";
+        
+        CompletionFill.fillAmount = 0;
+        
+        foreach (var gen in GeneratorUpgradeDisplays)
+        {
+            gen.Reset();
         }
     }
 
@@ -71,5 +90,26 @@ public class SimulationDisplay : MonoBehaviour
         {
             display.CurrentBuyType = CurrentBuyType;
         }
+    }
+
+    public void ShowCompleteSimBtn(float value, Resource resource, Action onComplete)
+    {
+        CompletionFill.fillAmount = 1;
+        TMP_Completion.text = $"{100:00.00} %";
+        
+        ObjCompleteSimBtn.SetActive(true);
+        TMP_CompleteSimValue.text = $"+{value:0.0} {resource.ResourceName}";
+        
+        BtnCompleteSim.onClick.AddListener(() => OnClick_CompleteSimBtn(onComplete));
+    }
+
+    private void OnClick_CompleteSimBtn(Action onComplete)
+    {
+        ObjCompleteSimBtn.SetActive(false);
+        BtnCompleteSim.onClick.RemoveAllListeners();
+        onComplete?.Invoke();
+        
+        ClearSimulation();
+        ObjRunSimBtn.SetActive(true);
     }
 }

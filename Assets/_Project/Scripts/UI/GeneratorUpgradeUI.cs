@@ -24,13 +24,10 @@ public class GeneratorUpgradeUI : TickObject
     protected override void Start()
     {
         _upgrade = Generator.Upgrades.First(u => u.UpgradeType == UpgradeType)!;
-
-        TMPUpgradeLabel.text = "/";
-        
-        TMPUpgradeValues.text = "/";
         
         BtnUpgrade.onClick.AddListener(OnClickUpgrade);
         
+        Reset();
         base.Start();
     }
 
@@ -40,14 +37,25 @@ public class GeneratorUpgradeUI : TickObject
         _active = true;
     }
 
+    public void Reset()
+    {
+        _active = false;
+        
+        TMPUpgradeLabel.text = "/";
+        TMPUpgradeValues.text = "/";
+
+        BtnUpgrade.interactable = false;
+        BuyableOverlay.fillAmount = 1;
+    }
+
     public override void Tick(uint index, float tickBalanceValue, float deltaTime)
     {
         if (!_active)
             return;
         
         var (amount, cost) = GetCostInfo();
-        BtnUpgrade.interactable = _upgrade.CostResource.Value > cost;
-        BuyableOverlay.fillAmount = 1 - Mathf.Clamp01((float)_upgrade.CostResource.Value / cost);
+        BtnUpgrade.interactable = amount > 0 && _upgrade.CostResource.Value > cost;
+        BuyableOverlay.fillAmount = amount > 0 ? 1 - Mathf.Clamp01((float)_upgrade.CostResource.Value / cost) : 1;
         TMPUpgradeValues.text = $"{cost:0.0}\n+{amount}";
     }
 
