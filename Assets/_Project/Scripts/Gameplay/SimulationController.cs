@@ -4,6 +4,7 @@ public class SimulationController : TickObject
     
     public int SimulationIndex;
     public Simulation CurrentSimulation;
+    public float SimulationTargetValue;
     
     public PhotonManager PhotonManager;
     public PhotonGenerator PhotonGenerator;
@@ -26,7 +27,8 @@ public class SimulationController : TickObject
             SimulationIndex, 
             photonManager, 
             photonGenerator, 
-            resource, 
+            resource,
+            GetSimulationTarget(SimulationIndex),
             GetDegradationValue(SimulationIndex),
             OnSimulationFinished);
         
@@ -56,9 +58,10 @@ public class SimulationController : TickObject
 
     private void ConfirmSimCompletion(float value)
     {
-        SimulationCompleteResource.Add(value);
+        SimulationCompleteResource.Value += value;
         SimLogger.Log($"Simulation completed. Added [+{value}] {SimulationCompleteResource.ResourceName}.");
     }
 
+    private float GetSimulationTarget(int index) => SimulationTargetValue;
     private float GetDegradationValue(int index) => 3;
 }

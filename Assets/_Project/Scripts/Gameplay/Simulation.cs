@@ -10,6 +10,8 @@ public class Simulation : ITickable
     public SimulationState CurrentState;
     public Resource OutputResource;
 
+    public float SimulationValue = 0;
+    public float SimulationTarget = 0;
     public float SimulationCompletion = 0;
     private PhotonManager _photonManager;
     private PhotonGenerator _photonGenerator;
@@ -22,6 +24,7 @@ public class Simulation : ITickable
         PhotonManager photonManager, 
         PhotonGenerator photonGenerator, 
         Resource resource, 
+        float simulationTarget,
         float completionDegradationPerTick,
         Action onFinished)
     {
@@ -39,6 +42,7 @@ public class Simulation : ITickable
         resource.Reset();
         OutputResource = resource;
         
+        SimulationTarget = simulationTarget;
         _completionDegradationPerTick = completionDegradationPerTick;
         _onSimulationFinished = onFinished;
         
@@ -57,9 +61,9 @@ public class Simulation : ITickable
     private void PhotonFinished(int count)
     {
         var outputValue = count * CurrentState.Efficiency;
-        OutputResource.Add(count * CurrentState.Efficiency);
-        SimulationCompletion += outputValue - _completionDegradationPerTick;
-        SimulationCompletion = Mathf.Clamp(SimulationCompletion, 0, 100);
+        OutputResource.Value += count * CurrentState.Efficiency;
+        SimulationValue += outputValue - _completionDegradationPerTick;
+        SimulationCompletion = (SimulationValue / SimulationTarget) * 100;
         if(SimulationCompletion >= 100)
             _onSimulationFinished?.Invoke();
     }
@@ -72,10 +76,10 @@ public class Simulation : ITickable
     }
 }
 
-[System.Serializable]
+[Serializable]
 public class SimulationState
 {
-    public int Count = 0;
-    public float RatePerSecond = 0;
+    public int Count;
+    public float RatePerSecond;
     public float Efficiency = 1;
 }

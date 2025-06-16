@@ -1,9 +1,7 @@
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public abstract class BaseGenerator : TickObject
 {
@@ -18,21 +16,9 @@ public abstract class BaseGenerator : TickObject
     public virtual void Init()
     {
         Upgrades.First(u => u.UpgradeType == BaseGeneratorUpgradeType.FREQUENCY).Init(f => GenerationRatePerTick = f);
-        Upgrades.First(u => u.UpgradeType == BaseGeneratorUpgradeType.COST).Init(f =>
-        {
-            foreach (var upgrade in Upgrades.Where(u => u.UpgradeType != BaseGeneratorUpgradeType.COST))
-            {
-                upgrade.CostMultiplier = f;
-            }
-        });
         
         _initialized = true;
         _active = true;
-    }
-
-    protected override void Start()
-    {
-        base.Start();
     }
 
     public override void Tick(uint index, float tickBalanceValue, float deltaTime)
@@ -57,7 +43,7 @@ public abstract class BaseGenerator : TickObject
     protected abstract void Generate(int amount);
 }
 
-[System.Serializable]
+[Serializable]
 public class BaseGeneratorUpgrade
 {
     public BaseGeneratorUpgradeType UpgradeType;
@@ -65,14 +51,15 @@ public class BaseGeneratorUpgrade
     
     [Header("Count & Value")]
     public int UpgradeCount;
-    public int MaxCount;
-    public Vector2 ValueRange;
     public float CurrentValue;
+    [Space]
+    public float BaseValue;
+    public float ValueCoefficient;
 
     [Header("Cost")] 
     public Resource CostResource;
-    public Vector2 CostRange;
-    public float CostMultiplier = 1;
+    public float BaseCost;
+    public float CostCoefficient = 1;
 
     private Action<float> _callback;
     
@@ -80,70 +67,41 @@ public class BaseGeneratorUpgrade
     {
         UpgradeCount = 0;
         _callback = callback;
-        CurrentValue = Mathf.Lerp(ValueRange.x, ValueRange.y, (float)UpgradeCount / MaxCount);
+        CurrentValue = BaseValue + ValueCoefficient * UpgradeCount;
         _callback?.Invoke(CurrentValue);
     }
 
-    public void AddUpgrade(int amount)
+    public void AddUpgrade(int amount, Bint cost)
     {
-        for (int i = 0; i < amount; i++)
-        {
-            CostResource.Remove(Mathf.Lerp(CostRange.x, CostRange.y, (float)(UpgradeCount) / MaxCount) * CostMultiplier);
-            
-            UpgradeCount++;
-        }
-        CurrentValue = Mathf.Lerp(ValueRange.x, ValueRange.y, (float)UpgradeCount / MaxCount);
+        CostResource.Value -= cost;
+        UpgradeCount += amount;
+        CurrentValue = CurrentValue = BaseValue + ValueCoefficient * UpgradeCount;
         _callback?.Invoke(CurrentValue);
     }
 
-    public float GetNextCost()
+    public Bint GetNextCost()
     {
         return GetUpgradeCost(UpgradeCount);
     }
     
-    public (int upgradeCount, float totalCost) GetMaxAffordableUpgrades()
+    public (int upgradeCount, Bint totalCost) GetMaxAffordableUpgrades()
     {
-        var left = 0;
-        var right = MaxCount - UpgradeCount;
-        var bestCount = 0;
-        var bestCost = 0f;
+        var innerLog = (CostResource.Value * CostCoefficient - 1) / (BaseCost * Mathf.Pow(CostCoefficient, UpgradeCount)) + 1;
+        var max = (int)Math.Floor(BintExtensions.Log(innerLog, CostCoefficient));
 
-        while (left <= right)
-        {
-            var mid = (left + right) / 2;
-            var totalCost = GetTotalUpgradeCost(UpgradeCount, mid);
+        var cost = GetTotalUpgradeCost(UpgradeCount, max);
 
-            if (totalCost <= CostResource.BaseValue)
-            {
-                bestCount = mid;
-                bestCost = totalCost;
-                left = mid + 1; // Try to get more upgrades
-            }
-            else
-            {
-                right = mid - 1; // Too expensive, reduce
-            }
-        }
-
-        return (bestCount, bestCost);
+        return (max, cost);
     }
 
-    private float GetTotalUpgradeCost(int startIndex, int count)
+    private Bint GetTotalUpgradeCost(int startIndex, int count)
     {
-        float total = 0f;
-        for (int i = 0; i < count; i++)
-        {
-            total += GetUpgradeCost(startIndex + i);
-        }
-        return total;
+        return BaseCost * (Mathf.Pow(CostCoefficient, startIndex) * Mathf.Pow(CostCoefficient, count) - 1) / (CostCoefficient - 1);
     }
 
-    private float GetUpgradeCost(int index)
+    private Bint GetUpgradeCost(int index)
     {
-        return Mathf.Lerp(CostRange.x, CostRange.y, (float)(index + 1) / MaxCount) * CostMultiplier;
-
-        // If you want exponential instead, replace above with something like:
-        // return Mathf.Pow(1.1f, index) * BaseCost;
+        return BaseCost * Mathf.Pow(CostCoefficient, index);
     }
 }
 

@@ -16,6 +16,9 @@ public class ResourceUI : TickObject
     
     public override void Tick(uint index, float tickBalanceValue, float deltaTime)
     {
-        TMP_Value.text = Res.ToHumanReadableString();
+        Res.UpdateTrend();
+        
+        TMP_Value.text = Res.Value.ToScientificString();
+        TMP_Trend.text = Res.GetTrend().ToScientificString(true);
     }
 }

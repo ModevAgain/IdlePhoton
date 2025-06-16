@@ -68,7 +68,7 @@ public class SimulationDisplay : MonoBehaviour
 
     public void UpdateState(Simulation sim)
     {
-        TMP_SimValue.text = sim.OutputResource.ToHumanReadableString();
+        TMP_SimValue.text = sim.OutputResource.Value.ToScientificString();
 
         TMP_PhotonCount.text = sim.CurrentState.Count.ToString();
         TMP_PhotonRate.text = sim.CurrentState.RatePerSecond.ToString("0.0");

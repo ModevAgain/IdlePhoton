@@ -1,48 +1,37 @@
-using System;
+using System.Linq;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "IdleEngine/Resource", fileName = "Resource")]
 public class Resource : ScriptableObject
 {
     public string ResourceName;
-    
-    [FormerlySerializedAs("Value")] 
-    public float BaseValue;
-    public int Exponent;
 
-    public double Value => BaseValue * Math.Pow(10, Exponent);
+    public Bint Value;
     
-    public void Add(float value)
-    {
-        BaseValue += value;
-        SetExponent();
-    }
+    private Bint[] _lastTrendBuffer = new Bint[100];
+    private int _bufferIndex = 0;
+    private Bint _lastValue;
     
-    public void Remove(float value)
+    public void UpdateTrend()
     {
-        BaseValue -= value;
-        SetExponent();
+        if (_bufferIndex >= _lastTrendBuffer.Length)
+            _bufferIndex = 0;
+        
+        _lastTrendBuffer[_bufferIndex] = Value - _lastValue;
+        _lastValue = Value;
+
+        _bufferIndex++;
     }
 
-    private void SetExponent()
+    // Trend per second
+    public Bint GetTrend()
     {
-        Exponent = (int)Math.Floor(Math.Log10(BaseValue));
+        var sum = _lastTrendBuffer.Aggregate<Bint, Bint>(0, (current, t) => current + t);
+        return (sum/_lastTrendBuffer.Length) * 1/IdleEngine.Root.TickTime;
     }
     
     public void Reset()
     {
-        BaseValue = 0;
-        Exponent = 0;
-    }
-}
-
-public static class StringExtensions
-{
-    public static string ToHumanReadableString(this Resource resource)
-    {
-        if (resource.BaseValue > 999999)
-            return $"{resource.BaseValue/Mathf.Pow(10, resource.Exponent):0.00}e{resource.Exponent}";
-        return Mathf.FloorToInt(resource.BaseValue).ToString();
+        Value = 0;
     }
 }
