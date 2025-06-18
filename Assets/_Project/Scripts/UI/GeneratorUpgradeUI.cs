@@ -33,7 +33,7 @@ public class GeneratorUpgradeUI : TickObject
 
     public void Init()
     {
-        TMPUpgradeLabel.text = $"{_upgrade.Name} ( {_upgrade.UpgradeCount} )";
+        TMPUpgradeLabel.text = $"{_upgrade.Name} ( {_upgrade.UpgradeCount.ToScientificString()} )";
         _active = true;
     }
 
@@ -56,17 +56,17 @@ public class GeneratorUpgradeUI : TickObject
         var (amount, cost) = GetCostInfo();
         BtnUpgrade.interactable = amount > 0 && _upgrade.CostResource.Value > cost;
         BuyableOverlay.fillAmount = amount > 0 ? 1 - Mathf.Clamp01((float)(_upgrade.CostResource.Value / cost).Value) : 1;
-        TMPUpgradeValues.text = $"{cost.ToScientificString()}\n+{amount}";
+        TMPUpgradeValues.text = $"{cost.ToScientificString()}\n+{amount.ToScientificString()}";
     }
 
     private void OnClickUpgrade()
     {
         var (amount, cost) = GetCostInfo();
         _upgrade.AddUpgrade(amount, cost);
-        TMPUpgradeLabel.text = $"{_upgrade.Name} ( {_upgrade.UpgradeCount} )";
+        TMPUpgradeLabel.text = $"{_upgrade.Name} ( {_upgrade.UpgradeCount.ToScientificString()} )";
     }
 
-    private (int, Bint) GetCostInfo()
+    private (Bint, Bint) GetCostInfo()
     {
         if (CurrentBuyType == BuyType.SINGLE)
             return (1, _upgrade.GetNextCost());

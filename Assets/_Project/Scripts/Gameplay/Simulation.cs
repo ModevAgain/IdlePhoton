@@ -10,8 +10,8 @@ public class Simulation : ITickable
     public SimulationState CurrentState;
     public Resource OutputResource;
 
-    public float SimulationValue = 0;
-    public float SimulationTarget = 0;
+    public Bint SimulationValue = 0;
+    public Bint SimulationTarget;
     public float SimulationCompletion = 0;
     private PhotonManager _photonManager;
     private PhotonGenerator _photonGenerator;
@@ -63,7 +63,7 @@ public class Simulation : ITickable
         var outputValue = count * CurrentState.Efficiency;
         OutputResource.Value += count * CurrentState.Efficiency;
         SimulationValue += outputValue - _completionDegradationPerTick;
-        SimulationCompletion = (SimulationValue / SimulationTarget) * 100;
+        SimulationCompletion = ((SimulationValue / SimulationTarget) * 100).AsFloat();
         if(SimulationCompletion >= 100)
             _onSimulationFinished?.Invoke();
     }
@@ -79,7 +79,7 @@ public class Simulation : ITickable
 [Serializable]
 public class SimulationState
 {
-    public int Count;
-    public float RatePerSecond;
-    public float Efficiency = 1;
+    public Bint Count;
+    public Bint RatePerSecond;
+    public Bint Efficiency = 1;
 }

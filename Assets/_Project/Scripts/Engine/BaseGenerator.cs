@@ -7,9 +7,9 @@ public abstract class BaseGenerator : TickObject
 {
     public List<BaseGeneratorUpgrade> Upgrades;
     
-    public float GenerationRatePerTick;
+    public Bint GenerationRatePerTick;
     
-    private float _generationValue;
+    private Bint _generationValue;
     private bool _initialized;
     private bool _active;
 
@@ -29,7 +29,7 @@ public abstract class BaseGenerator : TickObject
         _generationValue += GenerationRatePerTick;
         if (_generationValue >= 1)
         {
-            var generationCount = Mathf.FloorToInt(_generationValue);
+            var generationCount = MathBint.Floor(_generationValue);
             Generate(generationCount);
             _generationValue -= generationCount;
         }
@@ -40,7 +40,7 @@ public abstract class BaseGenerator : TickObject
         _active = false;
     }
 
-    protected abstract void Generate(int amount);
+    protected abstract void Generate(Bint amount);
 }
 
 [Serializable]
@@ -50,8 +50,8 @@ public class BaseGeneratorUpgrade
     public string Name;
     
     [Header("Count & Value")]
-    public int UpgradeCount;
-    public float CurrentValue;
+    public Bint UpgradeCount;
+    public Bint CurrentValue;
     [Space]
     public float BaseValue;
     public float ValueCoefficient;
@@ -61,9 +61,9 @@ public class BaseGeneratorUpgrade
     public float BaseCost;
     public float CostCoefficient = 1;
 
-    private Action<float> _callback;
+    private Action<Bint> _callback;
     
-    public void Init(Action<float> callback)
+    public void Init(Action<Bint> callback)
     {
         UpgradeCount = 0;
         _callback = callback;
@@ -71,11 +71,11 @@ public class BaseGeneratorUpgrade
         _callback?.Invoke(CurrentValue);
     }
 
-    public void AddUpgrade(int amount, Bint cost)
+    public void AddUpgrade(Bint amount, Bint cost)
     {
         CostResource.Value -= cost;
         UpgradeCount += amount;
-        CurrentValue = CurrentValue = BaseValue + ValueCoefficient * UpgradeCount;
+        CurrentValue = BaseValue + ValueCoefficient * UpgradeCount;
         _callback?.Invoke(CurrentValue);
     }
 
@@ -84,30 +84,32 @@ public class BaseGeneratorUpgrade
         return GetUpgradeCost(UpgradeCount);
     }
     
-    public (int upgradeCount, Bint totalCost) GetMaxAffordableUpgrades()
+    public (Bint upgradeCount, Bint totalCost) GetMaxAffordableUpgrades()
     {
-        var innerLog = (CostResource.Value * CostCoefficient - 1) / (BaseCost * Mathf.Pow(CostCoefficient, UpgradeCount)) + 1;
-        var max = (int)Math.Floor(BintExtensions.Log(innerLog, CostCoefficient));
+        var innerLogA = CostResource.Value * (CostCoefficient - 1) / (BaseCost * MathBint.Pow(CostCoefficient, UpgradeCount)) + 1;
+        Bint innerLogB = CostCoefficient;
+        var log = MathBint.Log(innerLogA) / MathBint.Log(innerLogB);
+        
+        var max = MathBint.Floor(log);
 
         var cost = GetTotalUpgradeCost(UpgradeCount, max);
 
         return (max, cost);
     }
 
-    private Bint GetTotalUpgradeCost(int startIndex, int count)
+    private Bint GetTotalUpgradeCost(Bint startIndex, Bint count)
     {
-        return BaseCost * (Mathf.Pow(CostCoefficient, startIndex) * Mathf.Pow(CostCoefficient, count) - 1) / (CostCoefficient - 1);
+        return BaseCost * (MathBint.Pow(CostCoefficient, startIndex) * (MathBint.Pow(CostCoefficient, count) - 1)) / (CostCoefficient - 1);
     }
 
-    private Bint GetUpgradeCost(int index)
+    private Bint GetUpgradeCost(Bint index)
     {
-        return BaseCost * Mathf.Pow(CostCoefficient, index);
+        return BaseCost * MathBint.Pow(CostCoefficient, index);
     }
 }
 
 public enum BaseGeneratorUpgradeType
 {
     FREQUENCY,
-    EFFICIENCY,
-    COST
+    EFFICIENCY
 }

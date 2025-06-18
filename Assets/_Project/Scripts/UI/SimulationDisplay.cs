@@ -13,7 +13,6 @@ public class SimulationDisplay : MonoBehaviour
     public TMP_Text TMP_SimValue;
     public TMP_Text TMP_PhotonCount;
     public TMP_Text TMP_PhotonRate;
-    public TMP_Text TMP_PhotonEfficiency;
 
     public GameObject ObjRunSimBtn;
     public GameObject ObjCompleteSimBtn;
@@ -56,7 +55,6 @@ public class SimulationDisplay : MonoBehaviour
 
         TMP_PhotonCount.text = "/";
         TMP_PhotonRate.text = "/";
-        TMP_PhotonEfficiency.text = "/";
         
         CompletionFill.fillAmount = 0;
         
@@ -70,9 +68,8 @@ public class SimulationDisplay : MonoBehaviour
     {
         TMP_SimValue.text = sim.OutputResource.Value.ToScientificString();
 
-        TMP_PhotonCount.text = sim.CurrentState.Count.ToString();
-        TMP_PhotonRate.text = sim.CurrentState.RatePerSecond.ToString("0.0");
-        TMP_PhotonEfficiency.text = sim.CurrentState.Efficiency.ToString("0.0");
+        TMP_PhotonCount.text = sim.CurrentState.Count.ToScientificString();
+        TMP_PhotonRate.text = sim.CurrentState.RatePerSecond.ToScientificString();
         
         TMP_Completion.text = $"{sim.SimulationCompletion:00.00} %";
         CompletionFill.fillAmount = sim.SimulationCompletion/100;

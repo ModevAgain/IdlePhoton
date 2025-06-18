@@ -1,33 +1,50 @@
 using System;
+using UnityEngine;
 
 public struct Bint : IEquatable<Bint>, IComparable<Bint>
 {
-    private const int MaxMagnitude = 12;
-    private const double TenCubed = 1e3;
+    public string ValueStr;
 
     public double Value;
     public int Exponent;
 
+    
     public Bint(double value, int exponent = 0)
     {
         Value = value;
         Exponent = exponent;
+        ValueStr = string.Empty;
         Normalize();
+
+        ValueStr = $"{Value}e{Exponent}";
+    }
+
+    public Bint(float value, int exponent = 0)
+    {
+        Value = value;
+        Exponent = exponent;
+        ValueStr = string.Empty;
+        Normalize();
+
+        ValueStr = $"{Value}e{Exponent}";
     }
 
     private void Normalize()
     {
         if (Value < 1 && Exponent != 0)
         {
-            Value *= TenCubed;
-            Exponent -= 3;
-        }
-        else if (Value >= TenCubed)
-        {
-            while (Value >= TenCubed)
+            while (Value < 1 && Exponent != 0)
             {
-                Value /= TenCubed;
-                Exponent += 3;
+                Value *= 10;
+                Exponent -= 1;
+            }
+        }
+        else if (Value >= 10)
+        {
+            while (Value >= 10)
+            {
+                Value /= 10;
+                Exponent += 1;
             }
         }
         else if (Value <= 0)
@@ -41,7 +58,7 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
     {
         var diff = targetExp - Exponent;
         if (diff <= 0) return;
-        Value = (diff <= MaxMagnitude) ? Value / Math.Pow(10, diff) : 0;
+        Value /= Math.Pow(10, diff);
         Exponent = targetExp;
     }
 
@@ -67,15 +84,23 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
     {
         return factor >= 0 ? new Bint(a.Value * factor, a.Exponent) : a;
     }
+    
+    public static Bint operator *(Bint a, Bint factor)
+    {
+        a.Align(factor.Exponent);
+        a.Value *= factor.Value;
+        a.Normalize();
+        return a;
+    }
 
     public static Bint operator /(Bint a, double divisor)
     {
         return divisor > 0 ? new Bint(a.Value / divisor, a.Exponent) : a;
     }
     
-    public static Bint operator /(Bint a, Bint b)
+    public static Bint operator /(Bint a, Bint divisor)
     {
-        return b.Value > 0 ? new Bint(a.Value / b.Value, a.Exponent - b.Exponent) : a;
+        return divisor.Value > 0 ? new Bint(a.Value / divisor.Value, a.Value > 0 ? a.Exponent - divisor.Exponent : 0) : a;
     }
     
     public static bool operator ==(Bint a, Bint b)
@@ -114,23 +139,36 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
     public int CompareTo(Bint other) => this > other ? 1 : this < other ? -1 : 0;
 }
 
-public static class BintExtensions
+public static class MathBint
 {
-    public static double Log(Bint value, float baseValue)
+    public static Bint Log(Bint value) => new (value.Exponent);
+
+    public static Bint Floor(Bint value)
     {
-        return Math.Log10(value.Value) + value.Exponent / Math.Log10(baseValue);
+        return new Bint(Math.Floor(value.Value));
+    }
+
+    // Should this have a int range check?
+    public static Bint Pow(Bint value, Bint exponent)
+    {
+        return new Bint(value.Value, (int)Math.Pow(value.Exponent > 0 ? value.Exponent : 1, Math.Pow(exponent.Value, exponent.Exponent)));
+    }
+
+    public static int AsInt(this Bint value)
+    {
+        return (int)Math.Floor(Math.Pow(value.Value, value.Exponent));
     }
     
-    public static double Log(Bint value, double baseValue)
+    public static float AsFloat(this Bint value)
     {
-        return Math.Log10(value.Value) + value.Exponent / Math.Log10(baseValue);
+        return (float)Math.Pow(value.Value, value.Exponent);
     }
     
     public static string ToScientificString(this Bint value, bool prependSign = false)
     {
         var sign = value > 0 ? "+" : value == 0 ? "" : "-";
-        return value.Value > 999999 
-            ? $"{(prependSign ? sign : "")}{value.Value:0.00}e{value.Exponent}" 
-            : value.Value.ToString($"{(prependSign ? sign : "")}0.00");
+        return value.Exponent < 6
+            ? (value.Value * Mathf.Pow(10, value.Exponent)).ToString($"{(prependSign ? sign : string.Empty)}0.00")
+            : $"{(prependSign ? sign : string.Empty)}{value.Value:0.00}e{value.Exponent}";
     }
 }

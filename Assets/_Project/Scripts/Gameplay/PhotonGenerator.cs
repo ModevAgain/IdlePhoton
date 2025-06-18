@@ -5,7 +5,7 @@ public class PhotonGenerator : BaseGenerator
 {
     public PhotonManager PhotonManager;
 
-    public float Efficiency = 1;
+    public Bint Efficiency = 1;
     
     public override void Init()
     {
@@ -14,8 +14,8 @@ public class PhotonGenerator : BaseGenerator
         base.Init();
     }
 
-    protected override void Generate(int amount)
+    protected override void Generate(Bint amount)
     {
-        PhotonManager.AddPhoton(amount);
+        PhotonManager.AddPhoton(amount.AsInt());
     }
 }
