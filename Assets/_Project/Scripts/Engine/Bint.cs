@@ -1,10 +1,7 @@
 using System;
-using UnityEngine;
 
 public struct Bint : IEquatable<Bint>, IComparable<Bint>
 {
-    public string ValueStr;
-
     public double Value;
     public int Exponent;
 
@@ -13,20 +10,14 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
     {
         Value = value;
         Exponent = exponent;
-        ValueStr = string.Empty;
         Normalize();
-
-        ValueStr = $"{Value}e{Exponent}";
     }
 
     public Bint(float value, int exponent = 0)
     {
         Value = value;
         Exponent = exponent;
-        ValueStr = string.Empty;
         Normalize();
-
-        ValueStr = $"{Value}e{Exponent}";
     }
 
     private void Normalize()
@@ -82,7 +73,7 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
 
     public static Bint operator *(Bint a, double factor)
     {
-        return factor >= 0 ? new Bint(a.Value * factor, a.Exponent) : a;
+        return factor >= 0 ? new Bint(a.Value * factor, a.Exponent) : 0;
     }
     
     public static Bint operator *(Bint a, Bint factor)
@@ -129,7 +120,7 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
     public static bool operator >=(Bint a, Bint b) => (a > b) || (a == b);
     public static bool operator <=(Bint a, Bint b) => (a < b) || (a == b);
 
-    public override string ToString() => $"{Value}E{Exponent}";
+    public override string ToString() => $"{Value}e{Exponent}";
 
     public static implicit operator Bint(double value) => new (value);
 
@@ -141,34 +132,52 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
 
 public static class MathBint
 {
-    public static Bint Log(Bint value) => new (value.Exponent);
+    public static Bint Log(Bint value)
+    { 
+       return Math.Log(value.Value) + Math.Log(Math.Pow(10, value.Exponent));
+    }
 
     public static Bint Floor(Bint value)
     {
-        return new Bint(Math.Floor(value.Value));
+        return new Bint(Math.Floor(value.Value), value.Exponent);
     }
-
-    // Should this have a int range check?
+    
     public static Bint Pow(Bint value, Bint exponent)
     {
-        return new Bint(value.Value, (int)Math.Pow(value.Exponent > 0 ? value.Exponent : 1, Math.Pow(exponent.Value, exponent.Exponent)));
+        // Step 1: log10(base)
+        double logBase = Math.Log10(value.Value) + value.Exponent;
+
+        // Step 2: Multiply by exponent
+        double exponentValue = exponent.Value * Math.Pow(10, exponent.Exponent);
+        double power = exponentValue * logBase;
+
+        // Step 3: Convert result: 10^power = mantissa × 10^exponent
+        int newExp = (int)Math.Floor(power);
+        double newValue = Math.Pow(10, power - newExp);
+
+        return new Bint(newValue, newExp);
     }
 
-    public static int AsInt(this Bint value)
+    public static int FloorToInt(this Bint value)
     {
-        return (int)Math.Floor(Math.Pow(value.Value, value.Exponent));
+        return (int)Math.Floor(value.Value * Math.Pow(10, value.Exponent));
     }
     
     public static float AsFloat(this Bint value)
     {
-        return (float)Math.Pow(value.Value, value.Exponent);
+        return (float)(value.Value * Math.Pow(10, value.Exponent));
+    }
+
+    public static double AsDouble(this Bint value)
+    {
+        return value.Value * Math.Pow(10, value.Exponent);
     }
     
     public static string ToScientificString(this Bint value, bool prependSign = false)
     {
         var sign = value > 0 ? "+" : value == 0 ? "" : "-";
         return value.Exponent < 6
-            ? (value.Value * Mathf.Pow(10, value.Exponent)).ToString($"{(prependSign ? sign : string.Empty)}0.00")
+            ? (value.Value * Math.Pow(10, value.Exponent)).ToString($"{(prependSign ? sign : string.Empty)}0.00")
             : $"{(prependSign ? sign : string.Empty)}{value.Value:0.00}e{value.Exponent}";
     }
 }

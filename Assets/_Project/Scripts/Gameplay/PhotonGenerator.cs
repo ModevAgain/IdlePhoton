@@ -1,5 +1,4 @@
 using System.Linq;
-using UnityEngine;
 
 public class PhotonGenerator : BaseGenerator
 {
@@ -16,6 +15,6 @@ public class PhotonGenerator : BaseGenerator
 
     protected override void Generate(Bint amount)
     {
-        PhotonManager.AddPhoton(amount.AsInt());
+        PhotonManager.AddPhoton(amount.FloorToInt());
     }
 }
