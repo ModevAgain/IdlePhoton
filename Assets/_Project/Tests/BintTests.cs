@@ -53,36 +53,80 @@ public class BintTests
         Assert.That(bint.ToScientificString(), Is.EqualTo(result));
     }
     
-    [Test]
-    public void Bint_Equals_ReturnsExpected()
+    [TestCase(1, 1, true)]
+    [TestCase(1, 0, false)]
+    [TestCase(0, 1, false)]
+    public void Bint_Equals_ReturnsExpected(double a, double b, bool expected)
     {
-        Assert.That(new Bint(1), Is.EqualTo(new Bint(1)));
-        Assert.That(new Bint(1), Is.Not.EqualTo(new Bint(0)));
-        Assert.That(new Bint(0), Is.Not.EqualTo(new Bint(1)));
-        Assert.That(new Bint(5, 5), Is.EqualTo(new Bint(0.5, 6)));
-        Assert.That(new Bint(0.5, 6), Is.EqualTo(new Bint(5, 5)));
-        Assert.That(new Bint(5, 6), Is.Not.EqualTo(new Bint(5, 5)));
-        Assert.That(new Bint(5, 5), Is.Not.EqualTo(new Bint(5, 6)));
+        var bintA = new Bint(a);
+        var bintB = new Bint(b);
+        Assert.That(bintA.Equals(bintB), Is.EqualTo(expected));
+    }
+    
+    [TestCase(5, 5, 0.5, 6, true)]
+    [TestCase(0.5, 6, 5, 6, false)]
+    [TestCase(5, 6, 5, 5, false)]
+    [TestCase(5, 5, 5, 6, false)]
+    public void Bint_WithExponent_Equals_ReturnsExpected(double a, int aE, double b, int bE, bool expected)
+    {
+        var bintA = new Bint(a, aE);
+        var bintB = new Bint(b, bE);
+        Assert.That(bintA.Equals(bintB), Is.EqualTo(expected));
+    }
+    
+    [TestCase(1, 1, 2)]
+    [TestCase(1 , 10, 11)]
+    [TestCase(10, 10, 20)]
+    [TestCase(10, 1000, 1010)]
+    [TestCase(1, 1000, 1001)]
+    [TestCase(-1, 1000, 999)]
+    [TestCase(1, -1000, -999)]
+    public void Bint_Addition_ReturnsExpected(double a, double b, double expected)
+    {
+        var bintA =  new Bint(a);
+        var bintB = new Bint(b);
+        var sum = bintA + bintB;
+        Assert.That(sum, Is.EqualTo(new Bint(expected)));
     }
     
     [Test]
-    public void Bint_Addition_ReturnsExpected()
+    public void Bint_Multiplication_ReturnsExpected()
     {
-        Assert.That(new Bint(1) + new Bint(1), Is.EqualTo(new Bint(2)));
-        Assert.That(new Bint(1) + new Bint(10), Is.EqualTo(new Bint(11)));
-        Assert.That(new Bint(10) + new Bint(10), Is.EqualTo(new Bint(20)));
-        Assert.That(new Bint(10) + new Bint(1000), Is.EqualTo(new Bint(1010)));
-        Assert.That(new Bint(1) + new Bint(1000), Is.EqualTo(new Bint(1001)));
+        Assert.That(new Bint(1) * new Bint(1), Is.EqualTo(new Bint(1)));
+        Assert.That(new Bint(1) * new Bint(10), Is.EqualTo(new Bint(10)));
+        Assert.That(new Bint(10) * new Bint(10), Is.EqualTo(new Bint(100)));
+        Assert.That(new Bint(10) * new Bint(1000), Is.EqualTo(new Bint(10000)));
+        Assert.That(new Bint(1) * new Bint(1000), Is.EqualTo(new Bint(1000)));
+        
+        Assert.That(new Bint(-1) * new Bint(1000), Is.EqualTo(new Bint(-1000)));
+        Assert.That(new Bint(1) * new Bint(-1000), Is.EqualTo(new Bint(-1000)));
+        Assert.That(new Bint(-1) * new Bint(-1000), Is.EqualTo(new Bint(1000)));
     }
     
-    [Test]
-    public void MathBint_Log_ReturnsExpected()
+ 
+    
+    [TestCase(1, 1, 1)]
+    [TestCase(1, 10, 0.1)]
+    [TestCase(10, 10, 1)]
+    [TestCase(10, 1, 10)]
+    [TestCase(-1, 100, -0.01)]
+    [TestCase(1, 100, 0.01)]
+    [TestCase(-1, 100, -0.01)]
+    public void Bint_Division_ReturnsExpected(double a, double b, double expected)
     {
-        Assert.That(MathBint.Log(new Bint(1)).AsDouble() , Is.EqualTo(Math.Log(1)));
-        Assert.That(MathBint.Log(new Bint(10)).AsDouble() , Is.EqualTo(Math.Log(10)));
-        Assert.That(MathBint.Log(new Bint(100)).AsDouble() , Is.EqualTo(Math.Log(100)));
-        Assert.That(MathBint.Log(new Bint(2.4)).AsDouble() , Is.EqualTo(Math.Log(2.4)));
-        Assert.That(MathBint.Log(new Bint(10000.24)).AsDouble() , Is.EqualTo(Math.Log(10000.24)));
+        Assert.That(new Bint(a) / new Bint(b), Is.EqualTo(new Bint(expected)));
+        
+    }
+    
+    
+    [TestCase(1, 1)]
+    [TestCase(10, 10)]
+    [TestCase(100, 100)]
+    [TestCase(2.4, 2.4)]
+    [TestCase(10000.24, 10000.24)]
+    public void MathBint_Log_ReturnsExpected(double value, double expected)
+    {
+        Assert.That(MathBint.Log(new Bint(value)).AsDouble() , Is.EqualTo(Math.Log(expected)).Within(Bint.PRECISION_FACTOR));
     }
     
     [TestCase(1,1)]

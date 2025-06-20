@@ -26,7 +26,7 @@ public class BaseGeneratorUpgrade
     {
         UpgradeCount = 0;
         _onUpgrade = onUpgradeCallback;
-        CurrentValue = BaseValue + ValueCoefficient * UpgradeCount;
+        CurrentValue = EngineMath.CalculateGeneratorValue(BaseValue, ValueCoefficient, UpgradeCount);
         _onUpgrade?.Invoke(CurrentValue);
     }
 
@@ -34,7 +34,7 @@ public class BaseGeneratorUpgrade
     {
         CostResource.Value -= cost;
         UpgradeCount += amount;
-        CurrentValue = BaseValue + ValueCoefficient * UpgradeCount;
+        CurrentValue = EngineMath.CalculateGeneratorValue(BaseValue, ValueCoefficient, UpgradeCount);
         _onUpgrade?.Invoke(CurrentValue);
     }
 
@@ -45,24 +45,16 @@ public class BaseGeneratorUpgrade
     
     public (Bint upgradeCount, Bint totalCost) GetMaxAffordableUpgrades()
     {
-        var innerLogA = CostResource.Value * (CostCoefficient - 1) / (BaseCost * MathBint.Pow(CostCoefficient, UpgradeCount)) + 1;
-        Bint innerLogB = CostCoefficient;
-        var log = MathBint.Log(innerLogA) / MathBint.Log(innerLogB);
-        
-        var max = MathBint.Floor(log);
-
-        var cost = GetTotalUpgradeCost(UpgradeCount, max);
-
-        return (max, cost);
+        return EngineMath.GetMaxAffordableUpgrades(BaseCost, CostCoefficient, UpgradeCount, CostResource.Value);
     }
 
     private Bint GetTotalUpgradeCost(Bint startIndex, Bint count)
     {
-        return BaseCost * (MathBint.Pow(CostCoefficient, startIndex) * (MathBint.Pow(CostCoefficient, count) - 1)) / (CostCoefficient - 1);
+        return EngineMath.CalculateTotalCost(BaseCost, CostCoefficient, startIndex, count);
     }
 
     private Bint GetUpgradeCost(Bint index)
     {
-        return BaseCost * MathBint.Pow(CostCoefficient, index);
+        return EngineMath.CalculateCost(BaseCost, CostCoefficient, index);
     }
 }

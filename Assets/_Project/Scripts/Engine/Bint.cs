@@ -5,11 +5,12 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
     public double Value;
     public int Exponent;
 
+    public static readonly double PRECISION_FACTOR = 0.00001;
     
     public Bint(double value, int exponent = 0)
     {
         Value = value;
-        Exponent = exponent;
+        Exponent = value != 0 ? exponent : 0;
         Normalize();
     }
 
@@ -17,38 +18,32 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
     {
         Value = value;
         Exponent = exponent;
-        Normalize();
+        if(value != 0)
+            Normalize();
     }
 
     private void Normalize()
     {
-        if (Value < 1 && Exponent != 0)
+        if (Math.Abs(Value) < 1)
         {
-            while (Value < 1 && Exponent != 0)
-            {
-                Value *= 10;
-                Exponent -= 1;
-            }
+            Value *= 10;
+            Exponent -= 1;
+            if(Value != 0)
+                Normalize();
         }
-        else if (Value >= 10)
+        else if (Math.Abs(Value) >= 10)
         {
-            while (Value >= 10)
-            {
-                Value /= 10;
-                Exponent += 1;
-            }
-        }
-        else if (Value <= 0)
-        {
-            Value = 0;
-            Exponent = 0;
+            Value /= 10;
+            Exponent += 1;
+            if(Value != 0)
+                Normalize();
         }
     }
 
     private void Align(int targetExp)
     {
         var diff = targetExp - Exponent;
-        if (diff <= 0) return;
+        if (diff == 0) return;
         Value /= Math.Pow(10, diff);
         Exponent = targetExp;
     }
@@ -73,32 +68,33 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
 
     public static Bint operator *(Bint a, double factor)
     {
-        return factor >= 0 ? new Bint(a.Value * factor, a.Exponent) : 0;
+        return factor == 0 ? new Bint(a.Value * factor, a.Exponent) : 0;
     }
     
     public static Bint operator *(Bint a, Bint factor)
     {
-        a.Align(factor.Exponent);
         a.Value *= factor.Value;
+        a.Exponent += factor.Exponent;
         a.Normalize();
         return a;
     }
 
     public static Bint operator /(Bint a, double divisor)
     {
-        return divisor > 0 ? new Bint(a.Value / divisor, a.Exponent) : a;
+        return divisor == 0 ? new Bint(a.Value / divisor, a.Exponent) : a;
     }
     
     public static Bint operator /(Bint a, Bint divisor)
     {
-        return divisor.Value > 0 ? new Bint(a.Value / divisor.Value, a.Value > 0 ? a.Exponent - divisor.Exponent : 0) : a;
+        var result =  divisor.Value != 0 ? new Bint(a.Value / divisor.Value, a.Exponent - divisor.Exponent) : a;
+        return result;
     }
     
     public static bool operator ==(Bint a, Bint b)
     {
         a.Align(b.Exponent);
         b.Align(a.Exponent);
-        return Math.Abs(a.Value - b.Value) < 0.00001f;
+        return Math.Abs(a.Value - b.Value) < PRECISION_FACTOR;
     }
 
     public static bool operator !=(Bint a, Bint b) => !(a == b);
