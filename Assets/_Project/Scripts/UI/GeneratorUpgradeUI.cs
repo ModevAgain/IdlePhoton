@@ -53,9 +53,14 @@ public class GeneratorUpgradeUI : TickObject
         if (!_active)
             return;
         
+        UpdateButtonDisplay();
+    }
+
+    private void UpdateButtonDisplay()
+    {
         var (amount, cost) = GetCostInfo();
         BtnUpgrade.interactable = amount > 0 && _upgrade.CostResource.Value > cost;
-        BuyableOverlay.fillAmount = amount > 0 ? 1 - Mathf.Clamp01((float)(_upgrade.CostResource.Value / cost).Value) : 1;
+        BuyableOverlay.fillAmount = amount > 0 ? 1 - Mathf.Clamp01((_upgrade.CostResource.Value / cost).AsFloat()) : 1;
         TMPUpgradeValues.text = $"{cost.ToScientificString()}\n+{amount.ToScientificString()}";
     }
 
@@ -64,13 +69,15 @@ public class GeneratorUpgradeUI : TickObject
         var (amount, cost) = GetCostInfo();
         _upgrade.AddUpgrade(amount, cost);
         TMPUpgradeLabel.text = $"{_upgrade.Name} ( {_upgrade.UpgradeCount.ToScientificString()} )";
+        UpdateButtonDisplay();
     }
 
     private (Bint, Bint) GetCostInfo()
     {
+        var single =  ((Bint)1, _upgrade.GetNextCost());
         if (CurrentBuyType == BuyType.SINGLE)
-            return (1, _upgrade.GetNextCost());
-        
-        return _upgrade.GetMaxAffordableUpgrades();
+            return single;
+        var multiple = _upgrade.GetMaxAffordableUpgrades();
+        return multiple.upgradeCount == 0 ? single : multiple;
     }
 }

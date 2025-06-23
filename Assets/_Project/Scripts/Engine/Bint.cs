@@ -165,6 +165,11 @@ public static class MathBint
 
         return new Bint(newValue, newExp);
     }
+    
+    public static Bint Max(Bint a, Bint b)
+    {
+        return a > b ? a : b;
+    }
 
     public static int FloorToInt(this Bint value)
     {
@@ -188,4 +193,5 @@ public static class MathBint
             ? (value.Value * Math.Pow(10, value.Exponent)).ToString($"{(prependSign ? sign : string.Empty)}0.00")
             : $"{(prependSign ? sign : string.Empty)}{value.Value:0.00}e{value.Exponent}";
     }
+
 }

@@ -1,10 +1,8 @@
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class SimulationDisplay : MonoBehaviour
@@ -13,6 +11,7 @@ public class SimulationDisplay : MonoBehaviour
     public TMP_Text TMP_SimValue;
     public TMP_Text TMP_PhotonCount;
     public TMP_Text TMP_PhotonRate;
+    public TMP_Text TMP_PhotonValue;
 
     public GameObject ObjRunSimBtn;
     public GameObject ObjCompleteSimBtn;
@@ -55,6 +54,7 @@ public class SimulationDisplay : MonoBehaviour
 
         TMP_PhotonCount.text = "/";
         TMP_PhotonRate.text = "/";
+        TMP_PhotonValue.text = "/";
         
         CompletionFill.fillAmount = 0;
         
@@ -70,6 +70,7 @@ public class SimulationDisplay : MonoBehaviour
 
         TMP_PhotonCount.text = sim.CurrentState.Count.ToScientificString();
         TMP_PhotonRate.text = sim.CurrentState.RatePerSecond.ToScientificString();
+        TMP_PhotonValue.text = sim.CurrentState.Efficiency.ToScientificString();
         
         TMP_Completion.text = $"{sim.SimulationCompletion:00.00} %";
         CompletionFill.fillAmount = sim.SimulationCompletion/100;

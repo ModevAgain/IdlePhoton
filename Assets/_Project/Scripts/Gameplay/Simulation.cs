@@ -62,8 +62,8 @@ public class Simulation : ITickable
     {
         var outputValue = count * CurrentState.Efficiency;
         OutputResource.Value += count * CurrentState.Efficiency;
-        SimulationValue += outputValue - _completionDegradationPerTick;
-        SimulationCompletion = ((SimulationValue / SimulationTarget) * 100).AsFloat();
+        SimulationValue += MathBint.Max(0, outputValue - _completionDegradationPerTick);
+        SimulationCompletion = (SimulationValue / SimulationTarget * 100).AsFloat();
         if(SimulationCompletion >= 100)
             _onSimulationFinished?.Invoke();
     }

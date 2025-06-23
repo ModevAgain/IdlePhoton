@@ -1,7 +1,9 @@
 using System;
 using System.Globalization;
 using System.Numerics;
+#if DOTNET_9_ENABLED
 using BigFloatLibrary;
+#endif
 using NUnit.Framework;
 
 
@@ -122,7 +124,7 @@ public class BintTests
         Assert.That(new Bint(a) / new Bint(b), Is.EqualTo(new Bint(expected)));
     }
     
-    
+#if DOTNET_9_ENABLED    
     [TestCase(1)]
     [TestCase(10)]
     [TestCase(100)]
@@ -158,4 +160,6 @@ public class BintTests
     {
         return new BigInteger(bint.Value * 1e9) * BigInteger.Pow(10, bint.Exponent) / new BigInteger(1e9);
     }
+
+#endif
 }
