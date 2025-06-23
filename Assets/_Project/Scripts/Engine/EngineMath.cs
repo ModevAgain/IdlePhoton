@@ -9,12 +9,17 @@ public static class EngineMath
     {
         return baseCost * MathBint.Pow(costCoefficient, currentCount);
     }
+        //return -baseCost * ((MathBint.Pow(costCoefficient, currentCount) -  MathBint.Pow(costCoefficient, currentCount + targetCount)) / (1 - costCoefficient));
     public static Bint CalculateTotalCost(float baseCost, float costCoefficient, Bint currentCount, Bint targetCount)
     {
-        return -baseCost * ((MathBint.Pow(costCoefficient, currentCount) -  MathBint.Pow(costCoefficient, currentCount + targetCount)) / (1 - costCoefficient));
+        var powA = MathBint.Pow(costCoefficient, currentCount);
+        var powB = MathBint.Pow(costCoefficient, targetCount);
+        var divisionUpper = powA * (powB - 1);
+        var divisionLower = costCoefficient - 1;
+        return baseCost * (divisionUpper / divisionLower);
     }
     
-    public static (Bint upgradeCount, Bint totalCost) GetMaxAffordableUpgrades(float baseCost, float costCoefficient,
+    public static (Bint upgradeCount, Bint totalCost) CalculateMaxAffordableUpgrades(float baseCost, float costCoefficient,
         Bint currentCount, Bint resourceValue)
     {
         var innerLogA = resourceValue * (costCoefficient - 1) / (baseCost * MathBint.Pow(costCoefficient, currentCount)) + 1;

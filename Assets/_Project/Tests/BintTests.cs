@@ -1,12 +1,18 @@
 using System;
 using System.Globalization;
 using System.Numerics;
+using BigFloatLibrary;
 using NUnit.Framework;
 
 
 [TestFixture]
 public class BintTests
 {
+    [SetUp]
+    public void Setup()
+    {
+        CultureInfo.CurrentCulture = new CultureInfo("en-US");
+    }
     
     [TestCase(1, "1e0")]
     [TestCase(10, "1e1")]
@@ -48,7 +54,6 @@ public class BintTests
     [TestCase(.1, 300, "1.00e299")]
     public void Bint_ToScientific_ReturnsExpected(double value, int exponent, string result)
     {
-        CultureInfo.CurrentCulture = new CultureInfo("en-US");
         var bint  = new Bint(value, exponent);
         Assert.That(bint.ToScientificString(), Is.EqualTo(result));
     }
@@ -115,18 +120,19 @@ public class BintTests
     public void Bint_Division_ReturnsExpected(double a, double b, double expected)
     {
         Assert.That(new Bint(a) / new Bint(b), Is.EqualTo(new Bint(expected)));
-        
     }
     
     
-    [TestCase(1, 1)]
-    [TestCase(10, 10)]
-    [TestCase(100, 100)]
-    [TestCase(2.4, 2.4)]
-    [TestCase(10000.24, 10000.24)]
-    public void MathBint_Log_ReturnsExpected(double value, double expected)
+    [TestCase(1)]
+    [TestCase(10)]
+    [TestCase(100)]
+    [TestCase(2.4)]
+    [TestCase(10000.24)]
+    public void MathBint_Log_ReturnsExpected(double value)
     {
-        Assert.That(MathBint.Log(new Bint(value)).AsDouble() , Is.EqualTo(Math.Log(expected)).Within(Bint.PRECISION_FACTOR));
+        var resultAsLog2 = MathBint.Log(value) / MathBint.Log(2);
+        var expected = BigFloat.Log2(new BigFloat(value));
+        Assert.That(resultAsLog2.AsDouble() , Is.EqualTo(expected).Within(Bint.PRECISION_FACTOR));
     }
     
     [TestCase(1,1)]
@@ -136,12 +142,16 @@ public class BintTests
     [TestCase(1,308)]
     [TestCase(100,2)]
     [TestCase(9,15000)]
+    [TestCase(3.7,17)]
     public void MathBint_Pow_ReturnsExpected(double value, int exponent)
     {
         var result = MathBint.Pow(new Bint(value), new Bint(exponent));
-        var resultAsBigInteger = ToBigInteger(result);
-        var expected = BigInteger.Pow(new BigInteger(value), exponent);
-        Assert.That(resultAsBigInteger.ToString("e2"), Is.EqualTo(expected.ToString("e2")));
+        var expectedAsBigFloatString = BigFloat.Pow(new BigFloat(value), exponent).ToString();
+        var expectedAsBint = expectedAsBigFloatString.Contains("e+")
+            ? new Bint(float.Parse(expectedAsBigFloatString.Split("e+")[0]), int.Parse(expectedAsBigFloatString.Split("e+")[1]))
+            : new Bint(float.Parse(expectedAsBigFloatString));
+        
+        Assert.That(result, Is.EqualTo(expectedAsBint));
     }
 
     private static BigInteger ToBigInteger(Bint bint)

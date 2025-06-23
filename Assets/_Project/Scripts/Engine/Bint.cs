@@ -24,7 +24,7 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
 
     private void Normalize()
     {
-        if (Math.Abs(Value) < 1)
+        /*if (Math.Abs(Value) < 1)
         {
             Value *= 10;
             Exponent -= 1;
@@ -38,9 +38,22 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
             if(Value != 0)
                 Normalize();
         }
+        
+        if (Value == 0)
+        {
+            Exponent = 0;
+            return;
+        }*/
+
+
+        if (Value == 0)
+            return;
+        int shift = (int)Math.Floor(Math.Log10(Math.Abs(Value)));
+        Value /= Math.Pow(10, shift);
+        Exponent += shift;
     }
 
-    private void Align(int targetExp)
+    internal void Align(int targetExp)
     {
         var diff = targetExp - Exponent;
         if (diff == 0) return;
@@ -68,7 +81,7 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
 
     public static Bint operator *(Bint a, double factor)
     {
-        return factor == 0 ? new Bint(a.Value * factor, a.Exponent) : 0;
+        return factor != 0 ? new Bint(a.Value * factor, a.Exponent) : 0;
     }
     
     public static Bint operator *(Bint a, Bint factor)
@@ -77,11 +90,6 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
         a.Exponent += factor.Exponent;
         a.Normalize();
         return a;
-    }
-
-    public static Bint operator /(Bint a, double divisor)
-    {
-        return divisor == 0 ? new Bint(a.Value / divisor, a.Exponent) : a;
     }
     
     public static Bint operator /(Bint a, Bint divisor)
@@ -129,12 +137,16 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
 public static class MathBint
 {
     public static Bint Log(Bint value)
-    { 
-       return Math.Log(value.Value) + Math.Log(Math.Pow(10, value.Exponent));
+    {
+        if (value == 1)
+            return 0;
+        return Math.Log(value.Value) + value.Exponent * Math.Log(10);
     }
 
     public static Bint Floor(Bint value)
     {
+        if(value.Exponent < 0)
+            value.Align(0);
         return new Bint(Math.Floor(value.Value), value.Exponent);
     }
     
