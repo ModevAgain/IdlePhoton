@@ -25,7 +25,6 @@ public class PhotonManager : MonoBehaviour
     
     private NativeArray<Matrix4x4> _matrices;
     private NativeArray<Matrix4x4> _results;
-    private Matrix4x4[] _renderResults;
     
     private NativeArray<int> _photonFlags;
     private NativeArray<Vector3> _positions;
@@ -41,14 +40,13 @@ public class PhotonManager : MonoBehaviour
     private bool _receivedFirstPhoton;
     private int _photonAddPointer;
     
-    void Start()
+    private void Start()
     {
         _matrices = new NativeArray<Matrix4x4>(MaxPhotonCount, Allocator.Persistent);
         _positions = new NativeArray<Vector3>(MaxPhotonCount, Allocator.Persistent);
         _direction = new NativeArray<Vector3>(MaxPhotonCount, Allocator.Persistent);
         _photonFlags = new NativeArray<int>(MaxPhotonCount, Allocator.Persistent);
         _results = new NativeArray<Matrix4x4>(MaxPhotonCount, Allocator.Persistent);
-        _renderResults = new Matrix4x4[MaxPhotonCount];
         _photonAddQueue = new NativeArray<(Vector3, Vector3)>(MaxPhotonCount/100, Allocator.Persistent);
         _activeCount = new NativeArray<int>(1, Allocator.Persistent);
         _finishedCount = new NativeArray<int>(1, Allocator.Persistent);
@@ -70,9 +68,21 @@ public class PhotonManager : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        _matrices.Dispose();
+        _positions.Dispose();
+        _direction.Dispose();
+        _photonFlags.Dispose();
+        _results.Dispose();
+        _photonAddQueue.Dispose();
+        _activeCount.Dispose();
+        _finishedCount.Dispose();
+    }
+
     public void AddPhoton(int amount)
     {
-        for (int i = 0; i < amount; i++)
+        for (var i = 0; i < amount; i++)
         {
             _photonAddQueue[_photonAddPointer] = (DequeueRandomPosition(true), (CenterTarget.position - DequeueRandomPosition()).normalized * Speed);
             _photonAddPointer++;
@@ -129,7 +139,7 @@ public class PhotonManager : MonoBehaviour
     private void FillInPosition()
     {
         _positionsBuffer = new Vector3[MaxPhotonCount*100];
-        for (int i = 0; i < _positionsBuffer.Length; i++)
+        for (var i = 0; i < _positionsBuffer.Length; i++)
         {
             _positionsBuffer[i] = GetRandomPointFromCenterWithRange();
             _positionsBuffer[i].z = CenterOrigin.position.z;
@@ -166,12 +176,12 @@ public struct MatrixFilterJob : IJob
 
     public void Execute()
     {
-        int photonQueueIndex = 0;
+        var photonQueueIndex = 0;
             
         ActivePhotonCount[0] = 0;
         FinishedPhotonCount[0] = 0;
         
-        for (int i = 0; i < MaxPhotonCount; i++)
+        for (var i = 0; i < MaxPhotonCount; i++)
         {
             if (Flags[i] == 0)
             {
@@ -198,7 +208,7 @@ public struct MatrixFilterJob : IJob
             }
         }
         
-        for (int i = 0; i < Flags.Length; i++)
+        for (var i = 0; i < Flags.Length; i++)
         {
             if (Flags[i] == 1)
             {

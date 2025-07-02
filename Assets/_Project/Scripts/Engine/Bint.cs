@@ -136,6 +136,11 @@ public struct Bint : IEquatable<Bint>, IComparable<Bint>
 
 public static class MathBint
 {
+    /// <summary>
+    /// Calculate the natural logarithm of <c>value</c>.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <returns></returns>
     public static Bint Log(Bint value)
     {
         if (value == 1)
@@ -186,9 +191,19 @@ public static class MathBint
         return value.Value * Math.Pow(10, value.Exponent);
     }
     
+    public static float AsReverseFloat(this Bint value)
+    {
+        return value.Exponent + (float)value.Value/10f;
+    }
+
+    public static double AsReverseDouble(this Bint value)
+    {
+        return value.Exponent + value.Value/10;
+    }
+    
     public static string ToScientificString(this Bint value, bool prependSign = false)
     {
-        var sign = value > 0 ? "+" : value == 0 ? "" : "-";
+        var sign = value > 0 ? "+" : string.Empty;
         return value.Exponent < 6
             ? (value.Value * Math.Pow(10, value.Exponent)).ToString($"{(prependSign ? sign : string.Empty)}0.00")
             : $"{(prependSign ? sign : string.Empty)}{value.Value:0.00}e{value.Exponent}";
