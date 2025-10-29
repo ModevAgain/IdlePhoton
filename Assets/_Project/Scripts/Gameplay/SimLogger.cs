@@ -1,7 +1,7 @@
 using TMPro;
 using UnityEngine;
 
-public class SimLogger : BaseGameplayModule
+public class SimLogger : GameplayModule
 {
     public TMP_Text TMP_Text;
 

@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PositionalControl : BaseGameplayModule
+public class PositionalControl : GameplayModule
 {
     public float Steps;
     public Bounds TargetBounds;
@@ -11,6 +11,7 @@ public class PositionalControl : BaseGameplayModule
     public Transform TargetTransform;
     public Transform SimCamTransform;
     public TMP_Text TargetText;
+    public Image HealthFillImage;
     
     public Action<Vector2> OnPositionChanged;
 
@@ -26,12 +27,12 @@ public class PositionalControl : BaseGameplayModule
 
     public void OnClick_CenterTarget()
     {
-        OnTargetMove(Vector2.zero);
+        OnTargetMove(Vector2.zero, true);
     }
     
-    private void OnTargetMove(Vector2 direction)
+    private void OnTargetMove(Vector2 direction, bool set = false)
     {
-        var newPos = TargetTransform.position + (Vector3)direction * Steps;
+        var newPos = set ? (Vector3)direction : TargetTransform.position + (Vector3)direction * Steps;
         if (TargetBounds.Contains(newPos))
         {
             TargetTransform.position = newPos;
@@ -42,8 +43,22 @@ public class PositionalControl : BaseGameplayModule
         }
     }
 
+    public void SetHealthFill(float value)
+    {
+        HealthFillImage.fillAmount = value;
+        HealthFillImage.color = HealthFillImage.fillAmount >= 1f ? GlobalColors.SuccessGreen : GlobalColors.BaseRed;
+    }
+
     public override void OnModuleEnable()
     {
         base.OnModuleEnable();
+    }
+
+    public override void OnModuleReset()
+    {
+        TargetTransform.position = new Vector3(0, 0, TargetTransform.position.z);
+        TargetTransform.LookAt(SimCamTransform);
+        TargetText.text = $"Target<br>Position<br>({TargetTransform.position.x:0}, {TargetTransform.position.y:0})";
+        SetHealthFill(0);
     }
 }

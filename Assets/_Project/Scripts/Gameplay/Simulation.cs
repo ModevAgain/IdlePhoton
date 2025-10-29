@@ -13,6 +13,8 @@ public class Simulation : ITickable
     public Bint SimulationValue = 0;
     public Bint SimulationTarget;
     public float SimulationCompletion = 0;
+    public bool IsAccumulating;
+    
     private PhotonManager _photonManager;
     private PhotonGenerator _photonGenerator;
     private float _completionDegradationPerTick;
@@ -23,6 +25,7 @@ public class Simulation : ITickable
         int index, 
         PhotonManager photonManager, 
         PhotonGenerator photonGenerator, 
+        GameplayModule[] modules,
         Resource resource, 
         float simulationTarget,
         float completionDegradationPerTick,
@@ -38,6 +41,11 @@ public class Simulation : ITickable
         
         _photonGenerator = photonGenerator;
         _photonGenerator.Init();
+        
+        foreach (var module in modules)
+        {
+            module.OnModuleEnable();
+        }
         
         resource.Reset();
         OutputResource = resource;
@@ -63,16 +71,23 @@ public class Simulation : ITickable
         var outputValue = count * CurrentState.Efficiency;
         OutputResource.Value += count * CurrentState.Efficiency;
         SimulationValue += MathBint.Max(0, outputValue - _completionDegradationPerTick);
-        SimulationCompletion = SimulationValue.AsReverseFloat() / SimulationTarget.AsReverseFloat() * 100;
-        if(SimulationCompletion >= 100)
-            _onSimulationFinished?.Invoke();
+        if (!IsAccumulating)
+        {
+            SimulationCompletion = SimulationValue.AsReverseFloat() / SimulationTarget.AsReverseFloat() * 100;
+            if(SimulationCompletion >= 100)
+                _onSimulationFinished?.Invoke();
+        }
     }
 
-    public void Stop()
+    public void StopEvents()
     {
         _photonManager.PhotonsFinished -= PhotonFinished;
-        _photonGenerator.Stop();
         _onSimulationFinished = null;
+    }
+
+    public void StopGeneration()
+    {
+        _photonGenerator.Stop();
     }
 }
 

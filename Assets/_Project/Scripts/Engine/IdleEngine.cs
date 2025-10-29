@@ -56,6 +56,7 @@ public class IdleEngine : MonoBehaviour
         }
     }
 
+    // ReSharper disable Unity.PerformanceAnalysis
     public void RegisterTickable(ITickable tickable)
     {
         if (Debug_LogTickableRegistration)
